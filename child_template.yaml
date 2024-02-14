@@ -1,0 +1,108 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  lambda-layers-with-samsligidy/12
+Parameters:
+  EnvironmentType:
+    Type: String
+  GlobalTextProcessorLayer:
+    Type: String
+Conditions:
+  IsProd: !Equals [!Ref EnvironmentType, Production]
+  IsLocal: !Equals [!Ref EnvironmentType, Development]
+Resources:
+  # this layer will only be generated in local Environment
+  LocalTextProcessorLayer:
+    Condition: IsLocal
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: LocalTextProcessorLayer
+      Description: Text processor dependencies
+      ContentUri: './layers/text-processor-layer/'
+      CompatibleRuntimes:
+        - nodejs18.x
+    Metadata:
+      BuildMethod: nodejs18.x
+  ChildAPI:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      Name: API
+      StageName: !Ref EnvironmentType
+      DefaultRouteSettings:
+        DetailedMetricsEnabled: true
+        ThrottlingBurstLimit: 20
+        ThrottlingRateLimit: 20
+      CorsConfiguration:
+        AllowMethods:
+          - GET
+          - OPTIONS
+          - POST
+          - PUT
+          - HEAD
+          - PATCH
+          - DELETE
+        AllowHeaders:
+          - "*"
+        AllowOrigins:
+          - "*"
+      FailOnWarnings: true
+  ChildSlugifyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/slugify
+      Handler: app.slugifyFunction
+      Layers: !If
+        - IsProd
+        - - !Ref GlobalTextProcessorLayer
+        - - !Ref LocalTextProcessorLayer
+      Events:
+        ApiEvent:
+          Type: HttpApi
+          Properties:
+            Path: /child/slugify/{slug}
+            Method: get
+            ApiId:
+              Ref: ChildAPI
+            Auth:
+              Authorizer: NONE
+      Runtime: nodejs18.x
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints:
+          - app.ts
+        External:
+          - "/opt/nodejs/node_modules/slugify"
+  ChildCustomSlugifyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/custom-slugify
+      Handler: app.customSlugifyFunction
+      Layers: !If
+        - IsProd
+        - - !Ref GlobalTextProcessorLayer
+        - - !Ref LocalTextProcessorLayer
+      Events:
+        ApiEvent:
+          Type: HttpApi
+          Properties:
+            Path: /child/custom-slugify/{slug}
+            Method: get
+            ApiId:
+              Ref: ChildAPI
+            Auth:
+              Authorizer: NONE
+      Runtime: nodejs18.x
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints:
+          - app.ts
+        External:
+          - "/opt/nodejs/customCode"
