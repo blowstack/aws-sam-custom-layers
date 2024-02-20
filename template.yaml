@@ -6,13 +6,6 @@ Parameters:
   EnvironmentType:
     Type: String
     Default: 'Development'
-Conditions:
-  'Fn::ForEach::UniqueLoopName':
-    - Identifier
-    - - Value1 # Collection
-      - Value2
-    - 'OutputKey':
-        OutputValue
 Resources:
   TextProcessorLayer:
     Type: AWS::Serverless::LayerVersion
