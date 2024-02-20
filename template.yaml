@@ -102,5 +102,5 @@ Resources:
     Properties:
       Location: child_template.yaml
       Parameters:
-        EnvironmentType: !Ref OutputKey
+        EnvironmentType: !Ref EnvironmentType
         GlobalTextProcessorLayer: !Ref TextProcessorLayer
