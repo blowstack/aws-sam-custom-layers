@@ -100,7 +100,7 @@ Resources:
     Type: AWS::Serverless::Application
     DependsOn: [ MainAPI ]
     Properties:
-      Location: child_template.yaml
+      Location: text-processor-layer.yaml
       Parameters:
         EnvironmentType: !Ref EnvironmentType
         GlobalTextProcessorLayer: !Ref TextProcessorLayer
