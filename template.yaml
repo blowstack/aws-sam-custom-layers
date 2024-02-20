@@ -6,6 +6,13 @@ Parameters:
   EnvironmentType:
     Type: String
     Default: 'Development'
+Conditions:
+  'Fn::ForEach::UniqueLoopName':
+    - Identifier
+    - - Value1 # Collection
+      - Value2
+    - 'OutputKey':
+        OutputValue
 Resources:
   TextProcessorLayer:
     Type: AWS::Serverless::LayerVersion
@@ -100,7 +107,7 @@ Resources:
     Type: AWS::Serverless::Application
     DependsOn: [ MainAPI ]
     Properties:
-      Location: text-processor-layer.yaml
+      Location: child_template.yaml
       Parameters:
-        EnvironmentType: !Ref EnvironmentType
+        EnvironmentType: !Ref OutputKey
         GlobalTextProcessorLayer: !Ref TextProcessorLayer
